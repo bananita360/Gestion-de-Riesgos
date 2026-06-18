@@ -50,6 +50,7 @@ export function TabEvaluar({
   const [desc, setDesc] = useState("")
   const [categoria, setCategoria] = useState(CATEGORIAS[0])
   const [responsable, setResponsable] = useState("")
+  const [hasChanges, setHasChanges] = useState(false)
 
   // Selección inicial / cuando cambian los riesgos
   useEffect(() => {
@@ -67,8 +68,22 @@ export function TabEvaluar({
       setProb(r.probabilidad)
       setImp(r.impacto)
       setFrecuencia(r.frecuencia)
+      setHasChanges(false)
     }
   }, [selectedId, mode, risks])
+
+  // Detectar cambios en los valores
+  useEffect(() => {
+    if (mode !== "existing" || !selectedId) return
+    const r = risks.find((x) => String(x.id) === selectedId)
+    if (r) {
+      const changed =
+        r.probabilidad !== prob ||
+        r.impacto !== imp ||
+        r.frecuencia !== frecuencia
+      setHasChanges(changed)
+    }
+  }, [prob, imp, frecuencia, selectedId, mode, risks])
 
   const nivel = calcNivel(prob, imp)
   const zona = calcZona(nivel)
@@ -82,6 +97,7 @@ export function TabEvaluar({
         impacto: imp,
         frecuencia,
       })
+      setHasChanges(false)
     } else {
       if (!desc.trim()) return
       const created = addRisk({
@@ -98,6 +114,7 @@ export function TabEvaluar({
       setMode("existing")
       setDesc("")
       setResponsable("")
+      setHasChanges(false)
       if (created) setSelectedId(String(created.id))
     }
   }
@@ -295,7 +312,10 @@ export function TabEvaluar({
         </div>
 
         <div className="flex flex-wrap gap-3">
-          <Button onClick={handleSave}>
+          <Button 
+            onClick={handleSave}
+            disabled={mode === "existing" && !hasChanges}
+          >
             {mode === "existing" ? (
               <>
                 <Save className="size-4" /> Guardar evaluación
